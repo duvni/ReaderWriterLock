@@ -39,9 +39,8 @@ class ReaderWriterLock:
         if len(self._reading_threads) == 0:
             self._sync_lock.release()  # release before waiting on writing lock
             if not(self._write_lock.acquire(True, timeout)):
-                with self._sync_lock:
-                    self._read_lock.release()
-                    return False
+                self._read_lock.release()
+                return False
             else:
                 self._reading_threads.add(threading.get_ident())
         else:
