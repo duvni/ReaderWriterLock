@@ -36,13 +36,14 @@ class ReaderWriterLock:
             return False
 
         self._sync_lock.acquire()
-        if len(self._reading_threads) == 0:
+        if self.current_read_count == 0:
             self._sync_lock.release()  # release before waiting on writing lock
             if not(self._write_lock.acquire(True, timeout)):
                 self._read_lock.release()
                 return False
             else:
-                self._reading_threads.add(threading.get_ident())
+                with self._sync_lock:
+                    self._reading_threads.add(threading.get_ident())
         else:
             self._reading_threads.add(threading.get_ident())
             self._sync_lock.release()
@@ -61,14 +62,12 @@ class ReaderWriterLock:
 
     def exit_read_lock(self):
         """Exits read mode."""
-        if not self.is_read_lock_held:
-            return
-
         with self._read_lock:
             with self._sync_lock:
-                self._reading_threads.remove(threading.get_ident())
-                if len(self._reading_threads) == 0:
-                    self._write_lock.release()
+                if self.is_read_lock_held:
+                    self._reading_threads.remove(threading.get_ident())
+                    if self.current_read_count == 0:
+                        self._write_lock.release()
 
     def exit_write_lock(self):
         """Exits write mode."""
