@@ -26,7 +26,7 @@ class ReaderWriterLock:
 
     @property
     def is_write_lock_held(self) -> bool:
-        """	Gets a value that indicates whether the current thread has entered the lock in write mode."""
+        """Gets a value that indicates whether the current thread has entered the lock in write mode."""
         with self._sync_lock:
             return threading.get_ident() == self._writing_thread
 
