@@ -8,9 +8,12 @@ class ReaderWriterLock:
     def __init__(self):
         self._reading_threads = set()
         self._writing_thread = 0
+        self._writer_wait_count = 0
         self._read_lock = threading.RLock()
         self._write_lock = threading.RLock()
         self._sync_lock = threading.RLock()
+        self._writer_waiting_event = threading.Event()
+        self._writer_waiting_event.set()  # set means no writer is waiting
 
     @property
     def current_read_count(self) -> int:
@@ -32,7 +35,9 @@ class ReaderWriterLock:
 
     def enter_read_lock(self, timeout: float = None) -> bool:
         """Tries to enter the lock in read mode."""
-        if self.is_read_lock_held or not(self._read_lock.acquire(True, timeout)):
+        if self.is_read_lock_held or \
+           not(self._writer_waiting_event.wait(timeout)) or \
+           not(self._read_lock.acquire(True, timeout)):
             return False
 
         self._sync_lock.acquire()
@@ -52,10 +57,24 @@ class ReaderWriterLock:
 
     def enter_write_lock(self, timeout: float = None) -> bool:
         """Tries to enter the lock in write mode."""
-        if self.is_write_lock_held or not(self._write_lock.acquire(True, timeout)):
-            return False
+        with self._sync_lock:
+            if self.is_write_lock_held:
+                return False
+
+            self._writer_wait_count += 1
+            if self._writer_wait_count == 1:
+                self._writer_waiting_event.clear()
+
+        write_lock_acquired = self._write_lock.acquire(True, timeout)
 
         with self._sync_lock:
+            self._writer_wait_count -= 1
+            if self._writer_wait_count == 0:
+                self._writer_waiting_event.set()
+
+            if not write_lock_acquired:
+                return False
+
             self._writing_thread = threading.get_ident()
             return True
 
