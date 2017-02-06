@@ -57,6 +57,7 @@ class ReaderWriterLock:
         return True
 
     def upgrade_read_to_write_lock(self, timeout: float = -1) -> bool:
+        """Tries to upgrade the lock from read to write mode"""
         return self.enter_write_lock(timeout, True)
 
     def enter_write_lock(self, timeout: float = -1, upgrade_read: bool = False) -> bool:
@@ -98,6 +99,7 @@ class ReaderWriterLock:
                         self._write_lock.release()
 
     def downgrade_write_to_read_lock(self):
+        """Exits write mode and enters read mode"""
         self.exit_write_lock(True)
 
     def exit_write_lock(self, downgrade_to_read: bool = False):
