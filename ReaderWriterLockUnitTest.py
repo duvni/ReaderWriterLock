@@ -159,3 +159,14 @@ class TestReaderWriterLock(unittest.TestCase):
         writer1.join()
         self.assertTrue(reader1.read_lock_held)
         self.assertTrue(writer1.write_lock_held)
+
+    def test_upgrade_read_to_write_lock(self):
+        rw_lock = ReaderWriterLock()
+        rw_lock.enter_read_lock()
+        self.assertTrue(rw_lock.is_read_lock_held)
+        rw_lock.upgrade_read_to_write_lock()
+        self.assertTrue(rw_lock.is_write_lock_held)
+        self.assertFalse(rw_lock.is_read_lock_held)
+        rw_lock.downgrade_write_to_read_lock()
+        self.assertTrue(rw_lock.is_read_lock_held)
+        self.assertFalse(rw_lock.is_write_lock_held)

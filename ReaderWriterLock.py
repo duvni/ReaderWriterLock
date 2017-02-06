@@ -56,14 +56,20 @@ class ReaderWriterLock:
         self._read_lock.release()
         return True
 
-    def enter_write_lock(self, timeout: float = -1) -> bool:
+    def upgrade_read_to_write_lock(self, timeout: float = -1) -> bool:
+        return self.enter_write_lock(timeout, True)
+
+    def enter_write_lock(self, timeout: float = -1, upgrade_read: bool = False) -> bool:
         """Tries to enter the lock in write mode."""
         with self._sync_lock:
             if self.is_write_lock_held:
                 return False
 
-            if self.is_read_lock_held:
-                self.exit_read_lock()  # upgrade to write lock
+            if upgrade_read:
+                if self.is_read_lock_held:
+                    self.exit_read_lock()  # upgrade to write lock
+                else:
+                    return False  # read lock is not held, can't upgrade
 
             self._writer_wait_count += 1
             if self._writer_wait_count == 1:
@@ -91,9 +97,15 @@ class ReaderWriterLock:
                     if self.current_read_count == 0:
                         self._write_lock.release()
 
-    def exit_write_lock(self):
+    def downgrade_write_to_read_lock(self):
+        self.exit_write_lock(True)
+
+    def exit_write_lock(self, downgrade_to_read: bool = False):
         """Exits write mode."""
         with self._sync_lock:
             if self.is_write_lock_held:
                 self._writing_thread = 0
                 self._write_lock.release()
+
+            if downgrade_to_read and not self.is_read_lock_held:
+                self.enter_read_lock()
