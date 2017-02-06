@@ -33,10 +33,10 @@ class ReaderWriterLock:
         with self._sync_lock:
             return threading.get_ident() == self._writing_thread
 
-    def enter_read_lock(self, timeout: float = None) -> bool:
+    def enter_read_lock(self, timeout: float = -1) -> bool:
         """Tries to enter the lock in read mode."""
         if self.is_read_lock_held or \
-           not(self._writer_waiting_event.wait(timeout)) or \
+           not(self._writer_waiting_event.wait(None if timeout == -1 else timeout)) or \
            not(self._read_lock.acquire(True, timeout)):
             return False
 
@@ -55,7 +55,7 @@ class ReaderWriterLock:
         self._read_lock.release()
         return True
 
-    def enter_write_lock(self, timeout: float = None) -> bool:
+    def enter_write_lock(self, timeout: float = -1) -> bool:
         """Tries to enter the lock in write mode."""
         with self._sync_lock:
             if self.is_write_lock_held:
