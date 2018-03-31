@@ -1,7 +1,7 @@
 import unittest
 import threading
 import time
-from ReaderWriterLockClass import ReaderWriterLock
+from ReaderWriterLock import ReaderWriterLock
 
 
 class WriterThread(threading.Thread):
