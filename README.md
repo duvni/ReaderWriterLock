@@ -1,2 +1,3 @@
-# Reader writer lock
-Sample Python code for reader writer lock with priority to writers and optional timeout on wait
+# ReaderWriterLock
+Represents a lock that is used to manage access to a resource, allowing multiple threads for reading or exclusive access for writing.
+Supports timeouts and upgrading/downgrading between read and write.
